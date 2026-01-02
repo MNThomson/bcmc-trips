@@ -15,7 +15,6 @@ export function generateHtml(trips: Trip[]): string {
   const tripCards = trips.map((trip, index) => {
     const spotsLeft = trip.maxParticipants - trip.registered;
     const isFull = spotsLeft <= 0;
-    const availabilityClass = isFull ? 'full' : spotsLeft <= 2 ? 'limited' : 'available';
     
     // Parse date strings like "Fri 2" or "Feb 2" - extract the day number and any month/day name
     const parseDatePart = (dateStr: string) => {
@@ -68,9 +67,9 @@ export function generateHtml(trips: Trip[]): string {
               </div>
             </div>
             <div class="trip-side">
-              <span class="trip-availability ${availabilityClass}">
-                ${isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}${trip.waitingList > 0 ? ` · ${trip.waitingList} waiting` : ''}
-              </span>
+              <span class="trip-availability ${isFull ? 'full' : 'available'}">
+                ${trip.registered}/${trip.maxParticipants}
+              </span>${isFull && trip.waitingList > 0 ? `<span class="trip-waitlist">(${trip.waitingList})</span>` : ''}
               <div class="trip-badges">
                 ${trip.membersOnly ? '<span class="badge members">Members</span>' : ''}
                 ${trip.screening ? '<span class="badge screening">Screening</span>' : ''}
@@ -377,17 +376,19 @@ export function generateHtml(trips: Trip[]): string {
     
     .trip-availability {
       font-weight: 500;
+      font-size: 0.8125rem;
     }
     
     .trip-availability.available {
       color: var(--green);
     }
     
-    .trip-availability.limited {
-      color: var(--yellow);
+    .trip-availability.full {
+      color: var(--red);
     }
     
-    .trip-availability.full {
+    .trip-waitlist {
+      font-size: 0.75rem;
       color: var(--red);
     }
     
