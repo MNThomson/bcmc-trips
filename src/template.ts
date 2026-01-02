@@ -80,7 +80,7 @@ export function generateHtml(trips: Trip[]): string {
       font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.4;
       min-height: 100vh;
     }
     
@@ -113,7 +113,7 @@ export function generateHtml(trips: Trip[]): string {
     .controls {
       display: flex;
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       flex-wrap: wrap;
     }
     
@@ -193,7 +193,7 @@ export function generateHtml(trips: Trip[]): string {
     .trip-count {
       color: var(--text-muted);
       font-size: 0.8125rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
     
     .trips {
@@ -208,7 +208,7 @@ export function generateHtml(trips: Trip[]): string {
     
     .trip {
       background: var(--surface);
-      padding: 1.25rem;
+      padding: 0.875rem 1rem;
     }
     
     .trip[hidden] {
@@ -219,7 +219,7 @@ export function generateHtml(trips: Trip[]): string {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
       flex-wrap: wrap;
     }
     
@@ -258,7 +258,7 @@ export function generateHtml(trips: Trip[]): string {
     .trip-name {
       font-size: 1rem;
       font-weight: 500;
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.125rem;
     }
     
     .trip-name a {
@@ -274,13 +274,13 @@ export function generateHtml(trips: Trip[]): string {
     .trip-date {
       font-size: 0.8125rem;
       color: var(--text-muted);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
     
     .trip-desc {
       font-size: 0.8125rem;
       color: var(--text-muted);
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.375rem;
       font-style: italic;
     }
     
