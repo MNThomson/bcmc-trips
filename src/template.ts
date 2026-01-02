@@ -17,31 +17,70 @@ export function generateHtml(trips: Trip[]): string {
     const isFull = spotsLeft <= 0;
     const availabilityClass = isFull ? 'full' : spotsLeft <= 2 ? 'limited' : 'available';
     
+    // Parse date strings like "Fri 2" or "Feb 2" - extract the day number and any month/day name
+    const parseDatePart = (dateStr: string) => {
+      const parts = dateStr.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return { label: parts[0], day: parts[1] };
+      } else if (parts.length === 1) {
+        // Just a number
+        return { label: '', day: parts[0] };
+      }
+      return { label: '', day: '?' };
+    };
+    
+    const startParts = parseDatePart(trip.dateStart);
+    const endParts = parseDatePart(trip.dateEnd);
+    const isMultiDay = trip.dateStart !== trip.dateEnd;
+    
+    const dateBox = isMultiDay 
+      ? `<div class="date-box multi">
+          <div class="date-start">
+            <span class="date-label">${startParts.label}</span>
+            <span class="date-day">${startParts.day}</span>
+          </div>
+          <div class="date-end">
+            <span class="date-label">${endParts.label}</span>
+            <span class="date-day">${endParts.day}</span>
+          </div>
+        </div>`
+      : `<div class="date-box">
+          <span class="date-label">${startParts.label}</span>
+          <span class="date-day">${startParts.day}</span>
+        </div>`;
+    
     return `
       <article class="trip" 
         data-type="${escapeHtml(trip.type.toLowerCase())}"
         data-name="${escapeHtml(trip.name.toLowerCase())}"
         data-index="${index}"
         data-spots="${spotsLeft}">
-        <div class="trip-header">
-          <span class="trip-type">${escapeHtml(trip.type)}</span>
-          ${trip.grade ? `<span class="trip-grade">${escapeHtml(trip.grade)}</span>` : ''}
-          ${trip.membersOnly ? '<span class="badge members">Members</span>' : ''}
-          ${trip.screening ? '<span class="badge screening">Screening</span>' : ''}
-        </div>
-        <h2 class="trip-name">
-          <a href="${escapeHtml(trip.url)}" target="_blank" rel="noopener">${escapeHtml(trip.name)}</a>
-        </h2>
-        <p class="trip-date">${escapeHtml(trip.dateDisplay)}</p>
-        ${trip.description ? `<p class="trip-desc">${escapeHtml(trip.description)}</p>` : ''}
-        <div class="trip-footer">
-          <span class="trip-availability ${availabilityClass}">
-            ${isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
-            ${trip.waitingList > 0 ? ` · ${trip.waitingList} waiting` : ''}
-          </span>
-          <span class="trip-organizer">
-            <a href="${escapeHtml(trip.organizerUrl)}" target="_blank" rel="noopener">${escapeHtml(trip.organizer)}</a>
-          </span>
+        ${dateBox}
+        <div class="trip-content">
+          <div class="trip-row">
+            <div class="trip-main">
+              <h2 class="trip-name">
+                <a href="${escapeHtml(trip.url)}" target="_blank" rel="noopener">${escapeHtml(trip.name)}</a>
+              </h2>
+              <div class="trip-info">
+                <span class="trip-type">${escapeHtml(trip.type)}</span>
+                ${trip.grade ? `<span class="trip-grade">${escapeHtml(trip.grade)}</span>` : ''}
+              </div>
+            </div>
+            <div class="trip-side">
+              <span class="trip-availability ${availabilityClass}">
+                ${isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''}`}${trip.waitingList > 0 ? ` · ${trip.waitingList} waiting` : ''}
+              </span>
+              <div class="trip-badges">
+                ${trip.membersOnly ? '<span class="badge members">Members</span>' : ''}
+                ${trip.screening ? '<span class="badge screening">Screening</span>' : ''}
+              </div>
+              <span class="trip-organizer">
+                <a href="${escapeHtml(trip.organizerUrl)}" target="_blank" rel="noopener">${escapeHtml(trip.organizer)}</a>
+              </span>
+            </div>
+          </div>
+          ${trip.description ? `<p class="trip-desc">${escapeHtml(trip.description)}</p>` : ''}
         </div>
       </article>
     `;
@@ -208,57 +247,51 @@ export function generateHtml(trips: Trip[]): string {
     
     .trip {
       background: var(--surface);
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
     }
     
     .trip[hidden] {
       display: none;
     }
     
-    .trip-header {
+    .trip-content {
+      flex: 1;
+      min-width: 0;
       display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    
+    .trip-row {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
-      flex-wrap: wrap;
+      gap: 1rem;
     }
     
-    .trip-type {
-      font-size: 0.6875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .trip-main {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .trip-desc {
+      font-size: 0.8125rem;
       color: var(--text-muted);
-    }
-    
-    .trip-grade {
-      font-size: 0.6875rem;
-      background: var(--border);
-      padding: 0.125rem 0.375rem;
-      border-radius: 3px;
-    }
-    
-    .badge {
-      font-size: 0.625rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      padding: 0.125rem 0.375rem;
-      border-radius: 3px;
-    }
-    
-    .badge.members {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--green);
-    }
-    
-    .badge.screening {
-      background: rgba(234, 179, 8, 0.15);
-      color: var(--yellow);
+      font-style: italic;
+      line-height: 1.4;
     }
     
     .trip-name {
-      font-size: 1rem;
+      font-size: 0.9375rem;
       font-weight: 500;
       margin-bottom: 0.125rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .trip-name a {
@@ -271,26 +304,75 @@ export function generateHtml(trips: Trip[]): string {
       text-underline-offset: 2px;
     }
     
-    .trip-date {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-    }
-    
-    .trip-desc {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-      margin-bottom: 0.375rem;
-      font-style: italic;
-    }
-    
-    .trip-footer {
+    .date-box {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
-      font-size: 0.75rem;
-      flex-wrap: wrap;
+      justify-content: center;
+      width: 4.5rem;
+      height: 3.5rem;
+      padding: 0.375rem;
+      background: var(--bg);
+      border-radius: 4px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    
+    .date-box.multi {
+      flex-direction: row;
+      gap: 0.375rem;
+    }
+    
+    .date-box.multi .date-start,
+    .date-box.multi .date-end {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .date-box.multi .date-label {
+      font-size: 0.5625rem;
+    }
+    
+    .date-box.multi .date-day {
+      font-size: 1rem;
+    }
+    
+    .date-box .date-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+    
+    .date-box .date-day {
+      font-size: 1.375rem;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    
+    .trip-info {
+      display: flex;
+      align-items: center;
       gap: 0.5rem;
+      font-size: 0.8125rem;
+    }
+    
+    .trip-type {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    
+    .trip-grade {
+      font-size: 0.6875rem;
+      background: var(--border);
+      padding: 0.125rem 0.5rem;
+      border-radius: 3px;
+      font-weight: 500;
     }
     
     .trip-availability {
@@ -307,6 +389,41 @@ export function generateHtml(trips: Trip[]): string {
     
     .trip-availability.full {
       color: var(--red);
+    }
+    
+    .trip-side {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+    
+    .trip-badges {
+      display: flex;
+      gap: 0.25rem;
+    }
+    
+    .badge {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    
+    .badge.members {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+    }
+    
+    .badge.screening {
+      background: rgba(234, 179, 8, 0.15);
+      color: var(--yellow);
+    }
+    
+    .trip-organizer {
+      font-size: 0.75rem;
     }
     
     .trip-organizer a {
@@ -352,6 +469,38 @@ export function generateHtml(trips: Trip[]): string {
       
       select {
         width: 100%;
+      }
+      
+      .trip {
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
+      }
+      
+      .date-box {
+        width: 3.5rem;
+        height: 3rem;
+      }
+      
+      .date-box.multi .date-day {
+        font-size: 0.875rem;
+      }
+      
+      .trip-content {
+        flex: 1 1 70%;
+      }
+      
+      .trip-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.375rem;
+      }
+      
+      .trip-name {
+        white-space: normal;
+      }
+      
+      .trip-side {
+        flex-wrap: wrap;
       }
     }
   </style>
