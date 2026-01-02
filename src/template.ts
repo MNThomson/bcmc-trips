@@ -141,6 +141,55 @@ export function generateHtml(trips: Trip[]): string {
       border-color: var(--accent);
     }
     
+    .checkbox-filter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      user-select: none;
+    }
+    
+    .checkbox-filter:hover {
+      color: var(--text);
+    }
+    
+    .checkbox-filter input {
+      display: none;
+    }
+    
+    .checkbox-filter .checkmark {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--surface);
+      position: relative;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    
+    .checkbox-filter:hover .checkmark {
+      border-color: var(--text-muted);
+    }
+    
+    .checkbox-filter input:checked + .checkmark {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    
+    .checkbox-filter input:checked + .checkmark::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid var(--bg);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    
     .trip-count {
       color: var(--text-muted);
       font-size: 0.8125rem;
@@ -298,6 +347,7 @@ export function generateHtml(trips: Trip[]): string {
       
       .controls {
         flex-direction: column;
+        align-items: flex-start;
       }
       
       select {
@@ -318,11 +368,11 @@ export function generateHtml(trips: Trip[]): string {
         <option value="">All activities</option>
         ${typeOptions}
       </select>
-      <select id="sort-by">
-        <option value="date">Sort by date</option>
-        <option value="name">Sort by name</option>
-        <option value="availability">Sort by availability</option>
-      </select>
+      <label class="checkbox-filter">
+        <input type="checkbox" id="filter-available">
+        <span class="checkmark"></span>
+        Space available
+      </label>
     </div>
     
     <p class="trip-count"><span id="visible-count">${trips.length}</span> of ${trips.length} trips</p>
@@ -340,44 +390,27 @@ export function generateHtml(trips: Trip[]): string {
     (function() {
       const trips = document.querySelectorAll('.trip');
       const filterType = document.getElementById('filter-type');
-      const sortBy = document.getElementById('sort-by');
+      const filterAvailable = document.getElementById('filter-available');
       const visibleCount = document.getElementById('visible-count');
-      const tripsContainer = document.getElementById('trips');
       
       function updateView() {
         const typeFilter = filterType.value.toLowerCase();
-        const sortValue = sortBy.value;
+        const onlyAvailable = filterAvailable.checked;
         
-        // Convert to array for sorting
-        const tripArray = Array.from(trips);
-        
-        // Sort
-        tripArray.sort((a, b) => {
-          if (sortValue === 'name') {
-            return a.dataset.name.localeCompare(b.dataset.name);
-          } else if (sortValue === 'availability') {
-            return parseInt(b.dataset.spots) - parseInt(a.dataset.spots);
-          }
-          // Default: date (original order)
-          return parseInt(a.dataset.index) - parseInt(b.dataset.index);
-        });
-        
-        // Re-append in sorted order
-        tripArray.forEach(trip => tripsContainer.appendChild(trip));
-        
-        // Filter and count
         let visible = 0;
-        tripArray.forEach(trip => {
+        trips.forEach(trip => {
           const matchesType = !typeFilter || trip.dataset.type === typeFilter;
-          trip.hidden = !matchesType;
-          if (matchesType) visible++;
+          const matchesAvailable = !onlyAvailable || parseInt(trip.dataset.spots) > 0;
+          const show = matchesType && matchesAvailable;
+          trip.hidden = !show;
+          if (show) visible++;
         });
         
         visibleCount.textContent = visible;
       }
       
       filterType.addEventListener('change', updateView);
-      sortBy.addEventListener('change', updateView);
+      filterAvailable.addEventListener('change', updateView);
     })();
   </script>
 </body>
