@@ -1,7 +1,11 @@
 name = "bcmc-trips"
 main = "src/index.ts"
-compatibility_date = "2024-11-01"
+compatibility_date = "2025-12-01"
+workers_dev = false
+
+routes = [
+  { pattern = "bcmc.mnt.dev", custom_domain = true }
+]
 
 [vars]
 BCMC_URL = "https://bcmc.ca/m/events/"
-
