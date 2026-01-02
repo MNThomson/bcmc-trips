@@ -59,11 +59,10 @@ export function generateHtml(trips: Trip[]): string {
           <div class="trip-row">
             <div class="trip-main">
               <h2 class="trip-name">
-                <a href="${escapeHtml(trip.url)}" target="_blank" rel="noopener">${escapeHtml(trip.name)}</a>
+                ${trip.grade ? `<span class="trip-grade">${escapeHtml(trip.grade)}</span>` : ''}<a href="${escapeHtml(trip.url)}" target="_blank" rel="noopener">${escapeHtml(trip.name)}</a>
               </h2>
               <div class="trip-info">
                 <span class="trip-type">${escapeHtml(trip.type)}</span>
-                ${trip.grade ? `<span class="trip-grade">${escapeHtml(trip.grade)}</span>` : ''}
               </div>
             </div>
             <div class="trip-side">
@@ -291,11 +290,16 @@ export function generateHtml(trips: Trip[]): string {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
     }
     
     .trip-name a {
       color: var(--text);
       text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     .trip-name a:hover {
@@ -372,6 +376,8 @@ export function generateHtml(trips: Trip[]): string {
       padding: 0.125rem 0.5rem;
       border-radius: 3px;
       font-weight: 500;
+      margin-right: 0.5rem;
+      flex-shrink: 0;
     }
     
     .trip-availability {
