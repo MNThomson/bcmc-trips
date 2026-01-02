@@ -1,5 +1,31 @@
 import type { Trip } from './types';
 
+const GRADE_INFO = {
+  strenuousness: {
+    'A': '<4h, easy',
+    'B': '4-8h, moderate',
+    'C': '8-12h, strenuous',
+    'D': '>12h, extreme'
+  },
+  technical: {
+    '1': 'Groomed trails',
+    '2': 'Off-trail, some hands',
+    '3': 'Scrambling, rope possible',
+    '4': 'Climbing, belaying',
+    '5': 'Technical, hardware',
+    '6': 'Aid climbing'
+  }
+} as const;
+
+function getGradeTooltip(grade: string): string {
+  const match = grade.match(/^([A-D])(\d)/);
+  if (!match) return '';
+  const [, letter, number] = match;
+  const strenuousness = GRADE_INFO.strenuousness[letter as keyof typeof GRADE_INFO.strenuousness] || '';
+  const technical = GRADE_INFO.technical[number as keyof typeof GRADE_INFO.technical] || '';
+  return `${strenuousness} · ${technical}`;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -82,9 +108,10 @@ export function generateHtml(trips: Trip[]): string {
           <span class="date-day">${startParts.day}</span>
         </div>`;
     
+    const gradeTooltip = trip.grade ? getGradeTooltip(trip.grade) : '';
     const infoBox = `<div class="info-box">
-          <span class="info-grade">${trip.grade ? escapeHtml(trip.grade) : '—'}</span>
-          <span class="info-icon">${getActivityIcon(trip.type)}</span>
+          <span class="info-grade"${gradeTooltip ? ` data-tip="${escapeHtml(gradeTooltip)}"` : ''}>${trip.grade ? escapeHtml(trip.grade) : '—'}</span>
+          <span class="info-icon" data-tip="${escapeHtml(trip.type)}">${getActivityIcon(trip.type)}</span>
         </div>`;
     
     return `
@@ -414,6 +441,34 @@ export function generateHtml(trips: Trip[]): string {
       font-weight: 600;
       line-height: 1;
       color: var(--text);
+    }
+    
+    .info-box {
+      position: relative;
+    }
+    
+    .info-grade[data-tip],
+    .info-icon[data-tip] {
+      cursor: help;
+    }
+    
+    .info-grade[data-tip]:hover::after,
+    .info-icon[data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      color: #111;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      pointer-events: none;
     }
     
     .info-icon {
