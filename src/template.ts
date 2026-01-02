@@ -1,0 +1,386 @@
+import type { Trip } from './types';
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+export function generateHtml(trips: Trip[]): string {
+  const uniqueTypes = [...new Set(trips.map(t => t.type))].sort();
+  
+  const tripCards = trips.map((trip, index) => {
+    const spotsLeft = trip.maxParticipants - trip.registered;
+    const isFull = spotsLeft <= 0;
+    const availabilityClass = isFull ? 'full' : spotsLeft <= 2 ? 'limited' : 'available';
+    
+    return `
+      <article class="trip" 
+        data-type="${escapeHtml(trip.type.toLowerCase())}"
+        data-name="${escapeHtml(trip.name.toLowerCase())}"
+        data-index="${index}"
+        data-spots="${spotsLeft}">
+        <div class="trip-header">
+          <span class="trip-type">${escapeHtml(trip.type)}</span>
+          ${trip.grade ? `<span class="trip-grade">${escapeHtml(trip.grade)}</span>` : ''}
+          ${trip.membersOnly ? '<span class="badge members">Members</span>' : ''}
+          ${trip.screening ? '<span class="badge screening">Screening</span>' : ''}
+        </div>
+        <h2 class="trip-name">
+          <a href="${escapeHtml(trip.url)}" target="_blank" rel="noopener">${escapeHtml(trip.name)}</a>
+        </h2>
+        <p class="trip-date">${escapeHtml(trip.dateDisplay)}</p>
+        ${trip.description ? `<p class="trip-desc">${escapeHtml(trip.description)}</p>` : ''}
+        <div class="trip-footer">
+          <span class="trip-availability ${availabilityClass}">
+            ${isFull ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+            ${trip.waitingList > 0 ? ` · ${trip.waitingList} waiting` : ''}
+          </span>
+          <span class="trip-organizer">
+            <a href="${escapeHtml(trip.organizerUrl)}" target="_blank" rel="noopener">${escapeHtml(trip.organizer)}</a>
+          </span>
+        </div>
+      </article>
+    `;
+  }).join('\n');
+
+  const typeOptions = uniqueTypes.map(type => 
+    `<option value="${escapeHtml(type.toLowerCase())}">${escapeHtml(type)}</option>`
+  ).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCMC Trips</title>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #141416;
+      --border: #2a2a2e;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --accent: #f0f0f0;
+      --green: #22c55e;
+      --yellow: #eab308;
+      --red: #ef4444;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+    
+    header {
+      margin-bottom: 3rem;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    
+    h1 span {
+      color: var(--text-muted);
+    }
+    
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    select {
+      appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.625rem 2rem 0.625rem 0.875rem;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      border-radius: 4px;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+    }
+    
+    select:hover {
+      border-color: var(--text-muted);
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    
+    .trip-count {
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .trips {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .trip {
+      background: var(--surface);
+      padding: 1.25rem;
+    }
+    
+    .trip[hidden] {
+      display: none;
+    }
+    
+    .trip-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .trip-type {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    
+    .trip-grade {
+      font-size: 0.6875rem;
+      background: var(--border);
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+    }
+    
+    .badge {
+      font-size: 0.625rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+    }
+    
+    .badge.members {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+    }
+    
+    .badge.screening {
+      background: rgba(234, 179, 8, 0.15);
+      color: var(--yellow);
+    }
+    
+    .trip-name {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    
+    .trip-name a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    
+    .trip-name a:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    
+    .trip-date {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    
+    .trip-desc {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+    
+    .trip-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .trip-availability {
+      font-weight: 500;
+    }
+    
+    .trip-availability.available {
+      color: var(--green);
+    }
+    
+    .trip-availability.limited {
+      color: var(--yellow);
+    }
+    
+    .trip-availability.full {
+      color: var(--red);
+    }
+    
+    .trip-organizer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    
+    .trip-organizer a:hover {
+      color: var(--text);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+    
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    
+    footer a {
+      color: var(--text-muted);
+    }
+    
+    footer a:hover {
+      color: var(--text);
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 2rem 1rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+      }
+      
+      select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>BCMC <span>Trips</span></h1>
+      <p class="subtitle">British Columbia Mountaineering Club</p>
+    </header>
+    
+    <div class="controls">
+      <select id="filter-type">
+        <option value="">All activities</option>
+        ${typeOptions}
+      </select>
+      <select id="sort-by">
+        <option value="date">Sort by date</option>
+        <option value="name">Sort by name</option>
+        <option value="availability">Sort by availability</option>
+      </select>
+    </div>
+    
+    <p class="trip-count"><span id="visible-count">${trips.length}</span> of ${trips.length} trips</p>
+    
+    <div class="trips" id="trips">
+      ${trips.length > 0 ? tripCards : '<div class="empty-state">No upcoming trips found</div>'}
+    </div>
+    
+    <footer>
+      Data from <a href="https://bcmc.ca/m/events/" target="_blank" rel="noopener">bcmc.ca</a>
+    </footer>
+  </div>
+  
+  <script>
+    (function() {
+      const trips = document.querySelectorAll('.trip');
+      const filterType = document.getElementById('filter-type');
+      const sortBy = document.getElementById('sort-by');
+      const visibleCount = document.getElementById('visible-count');
+      const tripsContainer = document.getElementById('trips');
+      
+      function updateView() {
+        const typeFilter = filterType.value.toLowerCase();
+        const sortValue = sortBy.value;
+        
+        // Convert to array for sorting
+        const tripArray = Array.from(trips);
+        
+        // Sort
+        tripArray.sort((a, b) => {
+          if (sortValue === 'name') {
+            return a.dataset.name.localeCompare(b.dataset.name);
+          } else if (sortValue === 'availability') {
+            return parseInt(b.dataset.spots) - parseInt(a.dataset.spots);
+          }
+          // Default: date (original order)
+          return parseInt(a.dataset.index) - parseInt(b.dataset.index);
+        });
+        
+        // Re-append in sorted order
+        tripArray.forEach(trip => tripsContainer.appendChild(trip));
+        
+        // Filter and count
+        let visible = 0;
+        tripArray.forEach(trip => {
+          const matchesType = !typeFilter || trip.dataset.type === typeFilter;
+          trip.hidden = !matchesType;
+          if (matchesType) visible++;
+        });
+        
+        visibleCount.textContent = visible;
+      }
+      
+      filterType.addEventListener('change', updateView);
+      sortBy.addEventListener('change', updateView);
+    })();
+  </script>
+</body>
+</html>`;
+}
+
