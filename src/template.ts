@@ -141,7 +141,7 @@ export function generateHtml(trips: Trip[]): string {
               </span>
             </div>
           </div>
-          ${trip.description ? `<p class="trip-desc"><span class="trip-availability ${isFull ? 'full' : 'available'}">${trip.registered}/${trip.maxParticipants}</span>${isFull && trip.waitingList > 0 ? `<span class="trip-waitlist">(${trip.waitingList})</span>` : ''} ${escapeHtml(trip.description)}</p>` : ''}
+          ${trip.description ? `<p class="trip-desc"><span class="trip-availability ${isFull ? 'full' : 'available'}">${trip.registered}/${trip.maxParticipants}</span>${isFull && trip.waitingList > 0 ? `<span class="trip-waitlist"> (${trip.waitingList})</span>` : ''} ${escapeHtml(trip.description)}</p>` : ''}
         </div>
       </article>
     `;
